@@ -1,0 +1,2102 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Восход</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  body {
+    background: #000000;
+    color: #ffffff;
+    font-family: 'Press Start 2P', monospace;
+    font-smooth: never;
+    -webkit-font-smoothing: none;
+    -moz-osx-font-smoothing: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    overflow: hidden;
+    position: relative;
+  }
+
+  #text-screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #000000;
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+    cursor: pointer;
+  }
+  #text-content {
+    width: 100%;
+    max-width: 850px;
+    min-height: 250px;
+    font-size: 14px;
+    line-height: 2.2;
+    white-space: pre-line;
+    letter-spacing: 0.5px;
+    margin-bottom: 50px;
+  }
+  #text-hint {
+    font-size: 11px;
+    color: #555555;
+    animation: pulse 1.5s infinite;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  #ui-panel {
+    position: absolute;
+    top: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 96%;
+    max-width: 1300px;
+    background: rgba(0, 0, 0, 0.9);
+    border: 4px solid #ffffff;
+    padding: 14px 20px;
+    display: none;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    z-index: 100;
+  }
+  
+  .ui-group {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+  }
+  .ui-group.left { justify-content: flex-start; }
+  .ui-group.center { 
+    background: #111111;
+    border: 2px dashed #ffffff;
+    padding: 6px 16px;
+    gap: 25px;
+  }
+  .ui-group.right { justify-content: flex-end; }
+
+  .ui-item {
+    font-size: 11px;
+    line-height: 1.2;
+  }
+  .ui-item label {
+    color: #888888;
+    display: block;
+    font-size: 8px;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+  }
+  
+  .stat-val { color: #ffffff; }
+  .debt-alert { color: #ff3333; }
+  .passive-gain { color: #33ff33; }
+  .energy-alert { color: #ffff33; }
+  .time-box { color: #33ffff; }
+
+  #game-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #000000;
+    overflow: hidden;
+    display: none;
+  }
+
+  canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    image-rendering: pixelated;
+    object-fit: contain;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  #interaction-prompt {
+    position: absolute;
+    bottom: 250px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #000000;
+    border: 3px solid #ffffff;
+    color: #ffff33;
+    padding: 8px 16px;
+    font-size: 10px;
+    display: none;
+    pointer-events: none;
+    animation: pulse 1s infinite;
+    z-index: 5;
+  }
+
+  #dialog-box {
+    position: absolute;
+    bottom: 25px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 95%;
+    max-width: 900px;
+    background: #000000;
+    border: 6px solid #ffffff;
+    padding: 25px;
+    display: none;
+    gap: 25px;
+    z-index: 101;
+  }
+  #dialog-portrait {
+    width: 90px;
+    height: 90px;
+    background: #000000;
+    border: 4px solid #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+  }
+  
+  #dialog-content { 
+    flex: 1; 
+    display: flex; 
+    flex-direction: column; 
+    justify-content: flex-start; 
+  }
+  #dialog-name { 
+    font-size: 13px; 
+    color: #ffff33; 
+    margin-bottom: 12px; 
+    letter-spacing: 1px; 
+  }
+  #dialog-text { 
+    font-size: 11px; 
+    line-height: 2;
+    white-space: pre-line; 
+    letter-spacing: 0.5px; 
+  }
+  
+  #minigame-visual {
+    margin: 15px 0;
+    padding: 15px;
+    background: #111111;
+    border: 3px dashed #555555;
+    font-size: 11px;
+    color: #ffff33;
+    text-align: center;
+    min-height: 60px;
+    display: none;
+    white-space: pre-line;
+    line-height: 1.6;
+    position: relative;
+  }
+
+  .choices-list { 
+    margin-top: 20px; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 12px; 
+  }
+  .choice-btn {
+    background: #000000;
+    border: 2px solid transparent;
+    color: #ffffff;
+    padding: 8px 12px;
+    text-align: left;
+    cursor: pointer;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    line-height: 1.4;
+    width: 100%;
+  }
+  .choice-btn:hover { border-color: #ffffff; color: #ffff33; }
+  .choice-btn:hover::before { content: "➔ "; color: #ffff33; }
+
+  .ttt-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 50px);
+    gap: 8px;
+    margin: 20px auto 0 auto;
+    width: 166px;
+  }
+  .ttt-cell {
+    width: 50px;
+    height: 50px;
+    background: #000000;
+    border: 3px solid #ffffff;
+    color: #ffffff;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .ttt-cell:hover { background: #222222; }
+  .ttt-cell.taken { cursor: not-allowed; }
+
+  #trash-zone {
+    width: 100%;
+    height: 150px;
+    position: relative;
+    background: #222222;
+    border: 2px solid #555555;
+    overflow: hidden;
+    margin-top: 10px;
+  }
+  .trash-item {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    background: #ff3333;
+    border: 2px solid #ffffff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    user-select: none;
+    z-index: 10;
+  }
+  #trash-box {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 40px;
+    border: 4px dashed #33ff33;
+    background: rgba(51, 255, 51, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    color: #33ff33;
+  }
+
+  #memory-input-container {
+    margin-top: 15px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+  }
+  #memory-input {
+    background: #000000;
+    border: 2px solid #ffffff;
+    color: #ffff33;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 14px;
+    padding: 5px;
+    width: 140px;
+    text-align: center;
+  }
+
+  #slider-track {
+    width: 80%;
+    height: 20px;
+    background: #333333;
+    margin: 20px auto;
+    position: relative;
+    border: 2px solid #ffffff;
+  }
+  #slider-zone {
+    position: absolute;
+    top: 0;
+    width: 20%;
+    height: 100%;
+    background: #33ff33;
+  }
+  #slider-runner {
+    position: absolute;
+    top: -5px;
+    width: 8px;
+    height: 26px;
+    background: #ffffff;
+    border: 1px solid #000000;
+  }
+
+  #fullscreen-btn {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    background: #000000;
+    border: 3px solid #ffffff;
+    color: #ffffff;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    z-index: 100;
+  }
+  #fullscreen-btn:hover { background: #ffffff; color: #000000; }
+
+  @keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
+  @media screen and (max-width: 768px) {
+  #text-screen {
+    padding: 15px;
+  }
+  #text-content {
+    font-size: 10px;
+    line-height: 1.8;
+    margin-bottom: 30px;
+  }
+  #text-hint {
+    font-size: 8px;
+  }
+
+  #ui-panel {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 10px;
+    top: 5px;
+    width: 98%;
+  }
+  
+  .ui-group {
+    justify-content: space-between !important;
+    width: 100%;
+    gap: 10px;
+  }
+  
+  .ui-group.center {
+    border: 1px dashed #ffffff;
+    padding: 4px 10px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .ui-item {
+    font-size: 8px;
+  }
+  
+  .ui-item label {
+    font-size: 6px;
+    margin-bottom: 2px;
+  }
+
+  #dialog-box {
+    width: 98%;
+    padding: 12px;
+    bottom: 10px;
+    gap: 12px;
+    border-width: 4px;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  #dialog-portrait {
+    width: 60px;
+    height: 60px;
+    font-size: 24px;
+    border-width: 2px;
+  }
+
+  #dialog-name {
+    font-size: 10px;
+    margin-bottom: 6px;
+    text-align: center;
+  }
+
+  #dialog-text {
+    font-size: 8px;
+    line-height: 1.6;
+    text-align: center;
+  }
+
+  .choices-list {
+    margin-top: 10px;
+    gap: 6px;
+  }
+
+  .choice-btn {
+    font-size: 8px;
+    padding: 6px 8px;
+  }
+
+  #interaction-prompt {
+    bottom: unset;
+    top: 40%;
+    font-size: 8px;
+    padding: 6px 12px;
+  }
+
+  #fullscreen-btn {
+    bottom: 10px;
+    right: 10px;
+    padding: 6px 10px;
+    font-size: 7px;
+    border-width: 2px;
+  }
+
+  #slider-track {
+    width: 90%;
+    height: 15px;
+  }
+  #slider-runner {
+    top: -4px;
+    width: 6px;
+    height: 21px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  #ui-panel {
+    padding: 6px;
+  }
+  .ui-item {
+    font-size: 7px;
+  }
+}
+
+/* MOBILE CONTROLS PATCH */
+#mobile-controls{display:none;position:absolute;inset:0;pointer-events:none;z-index:90}
+#joystick-base{position:absolute;left:20px;bottom:20px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.4);pointer-events:auto;touch-action:none}
+#joystick-stick{position:absolute;left:45px;top:45px;width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.8)}
+#mobile-action{position:absolute;right:25px;bottom:35px;width:90px;height:90px;border-radius:50%;border:3px solid #fff;background:rgba(255,255,255,.15);color:#fff;font-family:'Press Start 2P', monospace;pointer-events:auto}
+@media (max-width: 900px){
+  #mobile-controls{display:block}
+}
+
+</style>
+</head>
+<body>
+
+<div id="text-screen" onclick="handleTextAdvance()">
+  <div id="text-content"></div>
+  <div id="text-hint">Нажмите [ E ] или кликните для продолжения</div>
+</div>
+
+<div id="ui-panel">
+  <div class="ui-group left">
+    <div class="ui-item">
+      <label>Наличные</label>
+      <span class="stat-val"><strong id="ui-money">0</strong> эк.</span>
+    </div>
+    <div class="ui-item">
+      <label>Вклад (+10%)</label>
+      <span class="stat-val"><strong id="ui-bank">0</strong> эк.</span>
+    </div>
+  </div>
+  
+  <div class="ui-group center">
+    <div class="ui-item" style="text-align: center;">
+      <label class="debt-alert">Текущий Долг</label>
+      <span class="debt-alert"><strong id="ui-debt">5000</strong> эк.</span>
+    </div>
+    <div class="ui-item" style="text-align: center;">
+      <label>Репутация</label>
+      <span class="stat-val"><strong id="ui-karma">50%</strong></span>
+    </div>
+  </div>
+  
+  <div class="ui-group right">
+    <div class="ui-item" style="text-align: right;">
+      <label>Пассивный доход</label>
+      <span class="passive-gain">+<strong id="ui-passive">0</strong>/сут.</span>
+    </div>
+    <div class="ui-item" style="text-align: right;">
+      <label>Поручения</label>
+      <span class="energy-alert"><strong id="ui-energy">3/3</strong></span>
+    </div>
+    <div class="ui-item" style="text-align: right;">
+      <label>Сроки</label>
+      <span class="time-box">День <strong id="ui-day">1</strong>/30 (<strong id="ui-time">ДЕНЬ</strong>)</span>
+    </div>
+  </div>
+</div>
+
+<div id="game-container">
+  <canvas id="gameCanvas"></canvas>
+  <div id="interaction-prompt">* Нажмите [ E ] для действия</div>
+  
+  <div id="dialog-box">
+    <div id="dialog-portrait">👤</div>
+    <div id="dialog-content">
+      <div id="dialog-name">ИМЯ</div>
+      <div id="minigame-visual"></div>
+      <div id="dialog-text">Текст...</div>
+      <div class="choices-list" id="dialog-choices"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+let G = {
+  money: 100, bank: 0, debt: 5000, day: 1, energy: 3, maxEnergy: 3, karma: 50,
+  currentLocation: 'home',
+  timeOfDay: 0,
+  plantDay: null, hasPlanted: false,
+  hasTools: false, passiveFromTools: 0,
+  hasItemsToSell: false,
+  phoneRinging: false,
+  phoneCallType: null,
+  activeJobOffer: null, 
+  pendingJobOffer: null,
+  currentNpcJobs: {},
+  npcRelations: { trader: 50, neighbor: 50, bandit: 30, girl: 50, grandma: 50 },
+  npcPayCuts: { trader: 0, neighbor: 0, bandit: 0, girl: 0, grandma: 0 },
+  dailyTalks: { trader: false, neighbor: false, bandit: false, girl: false, grandma: false },
+  completedTasksToday: { trader: false, neighbor: false, bandit: false, girl: false, grandma: false },
+  availableNpcsToday: [],
+  pendingInvestments: []
+};
+
+const timesStr = ["День", "Вечер", "Ночь"];
+
+let minigameState = {
+  type: null, board: [], targetCode: [], attempts: 0, correctShell: 0, 
+  rewardMoney: 0, rewardKarma: 0, currentNpcId: null,
+  trashLeft: 0, timerId: null, sequence: '', sliderPos: 0, sliderDir: 1, sliderTargetMin: 0, sliderTargetMax: 0, sliderAnimId: null,
+  isBotThinking : false
+};
+
+let textMode = 'intro';
+let textStage = 0;
+let textTyping = false;
+let textInterval = null;
+let isTextScreenActive = true;
+let activeTextArray = [];
+
+const introTexts = [
+  `* Эпоха Капитала безжалостна.\n\n* Город задыхается в дыму фабрик, а его законы пишутся золотом и кровью. Твой отец был честным человеком... И это стало его главной ошибкой.`,
+  `* Бывшие партнеры, чей аппетит невозможно утолить, подставили его. Поддельные подписи, фиктивные счета, продажные судьи...\n\n* В один миг его имя было растоптано, а на семью повесили колоссальный, неподъемный долг.`,
+  `* Теперь отец сломлен. Система заперла его в четырех стенах, ожидая, пока он сгинет.\n\n* Кредиторы уже у дверей. Время пошло на дни. Если долг не будет выплачен — вы потеряете всё.\n\n* Сын. Твой черед выйти на эти мрачные улицы и переписать правила этой игры...`
+];
+
+const endingKarmaZero = [
+  `* Финал: Клеймо позора.`,
+  `* Репутация твоей семьи упала до абсолютного нуля. В этих холодных кварталах слухи распространяются быстрее чумы.\n\n* Соседи, которым вы когда-то доверяли, теперь шепчутся за вашими спинами. Торговцы закрывают перед тобой двери, а на стенах дома появляются грязные надписи. Вы стали изгоями.`,
+  `* Не выдержав общественного давления и бесконечной травли, арендодатель разрывает контракт. Кредиторы забирают последнее имущество.\n\n* Этим же вечером вас с отцом выбрасывают на ледяную мостовую. Без гроша, без чести, без будущего... Город сожрал еще одну несчастную семью.`
+];
+
+const endingSuccess = [
+  `* Финал: Рассвет свободы.`,
+  `* Последняя монета со звоном падает на стол кредитора. Бумаги сожжены. Долг, тянувший вас на дно, наконец-то аннулирован. Вы свободны.`,
+  `* Ты смог сохранить лицо семьи и выстоять против законов Эпохи Капитала. Репутация чиста, а в карманах больше не гуляет ветер.`,
+  `* Собрав старые чемоданы, вы с отцом навсегда покидаете этот задымленный, жестокий мегаполис. Впереди — новое место, чистый лист и жизнь, где вам больше не придется считать дни до расплаты.\n\n* Вы победили эту систему.`
+];
+
+const endingCollectors = [
+  `* Финал: Визит в темноте.`,
+  `* 30 дней истекли. Солнце зашло за горизонт, но нужная сумма так и не была собрана. Время вышло.`,
+  `* Тяжелые, глухие удары сотрясают входную дверь. Петли не выдерживают, и в тесную команду проходят безликие люди в черных пальто. Их глаза холодны, как сталь. Напрасные оправдания тонут в тишине.`,
+  `* Они поднимают ослабевшего отца с кресла. Ты пытаешься вмешаться, но тяжелый удар сбивает тебя с ног.\n\n* «Долг платежом красен, парень. Теперь он будет отрабатывать его на шахтах Капитала», — бросает один из них.\n\n* Дверь захлопывается. Ты остаешься один в пустой, разгромленной квартире. Отца увезли... и ты знаешь, что оттуда не возвращаются.`
+];
+
+const audioTracks = {
+  city: new Audio('city.mp3'),
+  end: new Audio('end.mp3'),
+  home: new Audio('home.mp3'),
+  rep: new Audio('rep.mp3'),
+  button: new Audio('button.mp3'),
+  lose: new Audio('lose.mp3'),
+  win: new Audio('win.mp3')
+};
+
+audioTracks.city.loop = true;
+audioTracks.end.loop = true;
+audioTracks.home.loop = true;
+
+audioTracks.city.volume = 0.4;
+audioTracks.end.volume = 0.4;
+audioTracks.home.volume = 0.4;
+audioTracks.rep.volume = 0.5;
+audioTracks.button.volume = 0.5;
+audioTracks.lose.volume = 0.5;
+audioTracks.win.volume = 0.5;
+
+function playMusicForLocation(loc) {
+  if (isTextScreenActive) return;
+  if (loc === 'home') {
+    if (audioTracks.city.currentTime > 0) { audioTracks.city.pause(); audioTracks.city.currentTime = 0; }
+    if (audioTracks.home.paused) audioTracks.home.play().catch(e => {});
+  } else if (loc === 'city') {
+    if (audioTracks.home.currentTime > 0) { audioTracks.home.pause(); audioTracks.home.currentTime = 0; }
+    if (audioTracks.city.paused) audioTracks.city.play().catch(e => {});
+  }
+}
+
+function playSfx(trackName) {
+  const sfx = audioTracks[trackName];
+  if (sfx) {
+    sfx.currentTime = 0;
+    sfx.play().catch(e => {});
+  }
+}
+
+document.addEventListener('click', (e) => {
+  if (e.target && e.target.classList.contains('choice-btn') || e.target.classList.contains('ttt-cell') || e.target.id === 'fullscreen-btn') {
+    playSfx('button');
+  }
+});
+
+let typewriterInterval = null;
+let isTyping = false;
+let currentFullText = "";
+
+const animConfig = {
+  frameWidth: 128, frameHeight: 128, scale: 3.2, speed: 15, tick: 0, currentFrame: 0,
+  states: { idle: { src: 'idle.png', maxFrames: 6 }, run: { src: 'run.png', maxFrames: 8 } }
+};
+
+const playerAnimations = { idle: new Image(), run: new Image() };
+playerAnimations.idle.src = animConfig.states.idle.src;
+playerAnimations.run.src = animConfig.states.run.src;
+let currentAnimState = 'idle';
+
+const homeBgImg = new Image(); homeBgImg.src = 'home_bg.png';
+const bgMorning = new Image(); bgMorning.src = 'morning.png';
+const bgDay = new Image(); bgDay.src = 'day.png';
+const bgNight = new Image(); bgNight.src = 'night.png';
+const telephoneImg = new Image(); telephoneImg.src = 'telephone.png';
+
+const player = { x: 400, y: 0, width: animConfig.frameWidth * animConfig.scale * 0.4, height: animConfig.frameHeight * animConfig.scale, speed: 6.0, vx: 0, facing: 'right', isMoving: false };
+
+const keys = {};
+
+function resetInput() {
+  for (let key in keys) { keys[key] = false; }
+  player.vx = 0;
+  player.isMoving = false;
+  currentAnimState = 'idle';
+}
+
+window.addEventListener('keydown', e => { 
+  keys[e.code] = true; 
+  if (isTextScreenActive) { if (e.code === 'KeyE' || e.code === 'Space') handleTextAdvance(); } 
+  else { handleInteractionKey(e.code); }
+});
+
+window.addEventListener('keyup', e => { keys[e.code] = false; });
+window.addEventListener('blur', () => { resetInput(); });
+
+const npcJobsPool = {
+  trader: [
+    { text: 'Разгрузить уголь на рынке (Останови ползунок).', money: 75, karma: 1, type: 'slider' },
+    { text: 'Уход за рынком — быстрая уборка мусора в коробку.', money: 65, karma: 3, type: 'trash' },
+    { text: 'Сверить накладные склада по памяти.', money: 80, karma: 2, type: 'memory' }
+  ],
+  neighbor: [
+    { text: 'Наколоть дрова на заднем дворе дедушки (Крестики-нолики).', money: 50, karma: 6, type: 'ttt' },
+    { text: 'Сбор старых яблок в саду на время.', money: 55, karma: 5, type: 'trash' },
+    { text: 'Помочь настроить радиоприемник таймингом.', money: 45, karma: 4, type: 'slider' }
+  ],
+  bandit: [
+    { text: 'Сыграть в подпольные крестики-нолики на серьезные деньги.', money: 200, karma: -15, type: 'ttt' },
+    { text: 'Вскрыть кодовый замок сейфа по памяти.', money: 260, karma: -22, type: 'memory' },
+    { text: 'Собрать подозрительные улики в коробку.', money: 180, karma: -12, type: 'trash' }
+  ],
+  girl: [
+    { text: 'Помочь настроить тайминг для отправки посылок Киры.', money: 140, karma: 8, type: 'slider' },
+    { text: 'Разложить архивные письма Киры по номерам.', money: 120, karma: 7, type: 'memory' }
+  ],
+  grandma: [
+    { text: 'Помочь свести счета в швейной книге (Крестики-нолики).', money: 60, karma: 5, type: 'ttt' },
+    { text: 'Собрать обрезки тканей в корзину на скорость.', money: 50, karma: 4, type: 'trash' },
+    { text: 'Попасть ниткой в игольное ушко (Тайминг ползунка).', money: 70, karma: 6, type: 'slider' }
+  ]
+};
+
+function rerollAllJobs() {
+  for (let npcId in npcJobsPool) {
+    let pool = npcJobsPool[npcId];
+    G.currentNpcJobs[npcId] = pool[Math.floor(Math.random() * pool.length)];
+  }
+}
+
+function rollAvailableNpcs() {
+  const allNpcs = ['trader', 'neighbor', 'bandit', 'girl', 'shop', 'grandma'];
+  const countToSelect = Math.random() < 0.5 ? 3 : 4;
+  
+  let guaranteed = (G.pendingJobOffer && G.phoneCallType === 'job_offer') ? G.pendingJobOffer.id : null;
+  let pool = allNpcs.filter(id => id !== guaranteed);
+  
+  for (let i = pool.length - 1; i > 0; i--) {
+    let j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  
+  let chosen = pool.slice(0, guaranteed ? countToSelect - 1 : countToSelect);
+  if (guaranteed) chosen.push(guaranteed);
+  G.availableNpcsToday = chosen;
+}
+
+function startTextScreen(mode, textArray) {
+  resetInput();
+  textMode = mode; activeTextArray = textArray; textStage = 0; isTextScreenActive = true;
+  document.getElementById('text-screen').style.width = '100vw'; // Исправлена опечатка в .style.with
+  document.getElementById('text-screen').style.display = 'flex';
+  document.getElementById('ui-panel').style.display = 'none';
+  document.getElementById('game-container').style.display = 'none';
+  
+  // Принудительно глушим остальную музыку при запуске интро/титров
+  audioTracks.home.pause(); audioTracks.home.currentTime = 0;
+  audioTracks.city.pause(); audioTracks.city.currentTime = 0;
+  
+  runTypewriterAnimation();
+}
+
+function runTypewriterAnimation() {
+  const textContent = document.getElementById('text-content');
+  textContent.textContent = ""; textTyping = true;
+  let currentText = activeTextArray[textStage]; let charIndex = 0;
+  clearInterval(textInterval);
+  textInterval = setInterval(() => {
+    textContent.textContent += currentText[charIndex++];
+    if (charIndex >= currentText.length) { clearInterval(textInterval); textTyping = false; }
+  }, 40);
+}
+
+function handleTextAdvance() {
+  if (!isTextScreenActive) return;
+  
+  // Решение проблемы браузерного запрета: включаем музыку интро при самом первом клике пользователя
+  if ((textMode === 'intro' || textMode === 'ending') && audioTracks.end.paused) {
+    audioTracks.end.play().catch(e => console.log("Музыка ожидает более явного клика"));
+  }
+
+  const textContent = document.getElementById('text-content');
+  if (textTyping) {
+    clearInterval(textInterval); textContent.textContent = activeTextArray[textStage]; textTyping = false;
+  } else {
+    textStage++;
+    if (textStage < activeTextArray.length) { runTypewriterAnimation(); } 
+    else {
+      if (textMode === 'intro') {
+        isTextScreenActive = false;
+        document.getElementById('text-screen').style.display = 'none';
+        document.getElementById('ui-panel').style.display = 'grid';
+        document.getElementById('game-container').style.display = 'block';
+        
+        audioTracks.end.pause(); audioTracks.end.currentTime = 0;
+        playMusicForLocation(G.currentLocation);
+        
+        rerollAllJobs(); rollAvailableNpcs(); resizeCanvas(); updateUI(); gameLoop();
+      } else { location.reload(); }
+    }
+  }
+}
+
+function checkGameOverConditions() {
+  if (G.karma <= 0) { startTextScreen('ending', endingKarmaZero); return true; }
+  if (G.debt <= 0) { startTextScreen('ending', endingSuccess); return true; }
+  if (G.day > 30) { startTextScreen('ending', endingCollectors); return true; }
+  return false;
+}
+
+const ALL_CITY_NPCS = [
+  { id: 'trader', name: 'Михалыч', type: 'trader', x: 400, y: 0, width: 50, height: 135, spriteSrc: 'man1.png', frameWidth: 128, frameHeight: 128, maxFrames: 6, scale: 5.2, currentFrame: 0, tick: 0, speed: 15 },
+  { id: 'girl', name: 'Кира', type: 'girl', x: 700, y: 0, width: 45, height: 85, spriteSrc: 'idlegirl1.png', frameWidth: 128, frameHeight: 128, maxFrames: 9, scale: 3.4, currentFrame: 0, tick: 0, speed: 20 },
+  { id: 'neighbor', name: 'Сосед Игорь', x: 1050, y: 0, width: 50, height: 125, spriteSrc: 'stranman1.png', type: 'neighbor', frameWidth: 128, frameHeight: 128, maxFrames: 14, scale: 4.6, currentFrame: 0, tick: 0, speed: 25 },
+  { id: 'grandma', name: 'Мадам Эвелин', type: 'grandma', x: 1400, y: 0, width: 45, height: 120, spriteSrc: 'idle1trade.png', frameWidth: 128, frameHeight: 128, maxFrames: 6, scale: 4.4, currentFrame: 0, tick: 0, speed: 22 },
+  { id: 'shop', name: 'Марк (Обувщик)', x: 1750, y: 0, width: 75, height: 90, type: 'shop', spriteSrc: 'man2.png', frameWidth: 128, frameHeight: 128, maxFrames: 6, scale: 3.2, currentFrame: 0, tick: 0, speed: 25 },
+  { id: 'bandit', name: 'Серый тип', x: 2200, y: 0, width: 55, height: 125, spriteSrc: 'idle2trade.png', type: 'bandit', frameWidth: 128, frameHeight: 128, maxFrames: 7, scale: 4.5, currentFrame: 0, tick: 0, speed: 25 }
+];
+
+const locations = {
+  home: {
+    floorOffset: 10, walls: { left: 0, right: 1600 }, cameraX: 0,
+    objects: [
+      { id: 'home_bed', x: 700, y: 0, width: 120, height: 50, type: 'bed', color: '#ffffff00', label: 'Кровать (Сон)' },
+      { id: 'home_phone', x: 1100, y: 0, width: 250, height: 200, type: 'phone', color: '#4a4a4a', label: 'Телефон' },
+      { id: 'door_to_city', x: 1450, y: 0, width: 70, height: 200, type: 'door', color:'#ffffff00', target: 'city', label: 'Выйти на улицу' }
+    ],
+    npcs: [{ id: 'father', x: 150, y: 0, width: 50, height: 130, name: 'Отец', type: 'father', spriteSrc: 'homelessidle1.png', frameWidth: 128, frameHeight: 128, maxFrames: 11, scale: 4.8, currentFrame: 0, tick: 0, speed: 25 }]
+  },
+  city: {
+    floorOffset: 120, walls: { left: 0, right: 2800 }, cameraX: 0,
+    objects: [
+      { id: 'door_to_home', x: 60, y: 0, width: 50, height: 100, type: 'door', target: 'home', label: 'Вход в дом' }
+    ],
+    npcs: []
+  }
+};
+
+ALL_CITY_NPCS.forEach(npc => { if (npc.spriteSrc) { npc.sprite = new Image(); npc.sprite.src = npc.spriteSrc; } });
+locations.home.npcs.forEach(npc => { if (npc.spriteSrc) { npc.sprite = new Image(); npc.sprite.src = npc.spriteSrc; } });
+
+let activeInteraction = null; let isDialogOpen = false; let isPhoneDialogOpen = false;
+
+function resizeCanvas() {
+  if (isTextScreenActive) return;
+  canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+  
+  const currentLoc = locations[G.currentLocation];
+  const floorY = canvas.height - currentLoc.floorOffset;
+  player.y = floorY - player.height;
+
+  locations.home.npcs.forEach(npc => { npc.y = (canvas.height - locations.home.floorOffset) - npc.height; });
+  locations.home.objects.forEach(obj => {
+    if (obj.type === 'phone') obj.y = (canvas.height - locations.home.floorOffset) - 90; 
+    else obj.y = (canvas.height - locations.home.floorOffset) - obj.height;
+  });
+
+  let cityFloorY = canvas.height - locations.city.floorOffset;
+  ALL_CITY_NPCS.forEach(npc => { npc.y = cityFloorY - npc.height; });
+  locations.city.objects.forEach(obj => { obj.y = cityFloorY - obj.height; });
+}
+window.addEventListener('resize', resizeCanvas);
+
+function updateUI() {
+  G.passiveFromTools = G.hasTools ? 35 : 0;
+  document.getElementById('ui-money').textContent = G.money;
+  document.getElementById('ui-bank').textContent = G.bank;
+  document.getElementById('ui-karma').textContent = G.karma + '%';
+  document.getElementById('ui-debt').textContent = G.debt;
+  document.getElementById('ui-day').textContent = G.day;
+  document.getElementById('ui-energy').textContent = `${G.energy}/${G.maxEnergy}`;
+  document.getElementById('ui-passive').textContent = G.passiveFromTools;
+  document.getElementById('ui-time').textContent = timesStr[G.timeOfDay].toUpperCase();
+
+  if (G.availableNpcsToday.length > 0) {
+    locations.city.npcs = ALL_CITY_NPCS.filter(npc => G.availableNpcsToday.includes(npc.id));
+  } else {
+    locations.city.npcs = [...ALL_CITY_NPCS];
+  }
+  locations.city.npcs.push({ id: 'garden_bed', name: 'Заброшенный огород', x: 2550, y: (canvas.height - locations.city.floorOffset) - 40, width: 120, height: 40, color: '#3f2b1d', portrait: '🌱', type: 'garden' });
+}
+
+function isNpcAvailableToday(npcId) {
+  if (G.availableNpcsToday.length === 0) return true; 
+  return G.availableNpcsToday.includes(npcId);
+}
+
+function advanceTime() {
+  G.timeOfDay++;
+  if (G.timeOfDay > 2) {
+    G.timeOfDay = 2; 
+  } else {
+    checkLateJobOffers();
+  }
+  updateUI();
+}
+
+function advanceTimeTwoPhases() {
+  G.timeOfDay += 2;
+  if (G.timeOfDay > 2) {
+    G.timeOfDay = 2;
+  } else {
+    checkLateJobOffers();
+  }
+  updateUI();
+}
+
+function checkLateJobOffers() {
+  if (G.activeJobOffer && G.timeOfDay > G.activeJobOffer.targetTime) {
+    let targetNpc = G.activeJobOffer.npcId;
+    G.npcRelations[targetNpc] = Math.max(0, G.npcRelations[targetNpc] - 25);
+    G.npcPayCuts[targetNpc] = Math.min(30, G.npcPayCuts[targetNpc] + 15);
+    G.karma = Math.max(0, G.karma - 10);
+    resetInput();
+    alert(`⚠️ Вы пропустили встречу с NPC (${G.activeJobOffer.npcName})! Отношения ухудшились, общая репутация упала. Теперь он будет платить меньше!`);
+    G.activeJobOffer = null;
+  }
+}
+
+function performAction() {
+  G.energy--;
+  advanceTime();
+  checkGameOverConditions();
+}
+
+function performActionTwoPhases() {
+  G.energy -= 2;
+  advanceTimeTwoPhases();
+  checkGameOverConditions();
+}
+
+function triggerSleep() {
+  resetInput();
+  if (G.energy > 0 || G.timeOfDay < 2) {
+    if (!confirm("День еще не закончился. Вы точно хотите лечь спать и завершить этот день?")) return;
+  }
+  
+  if (G.activeJobOffer) {
+    let targetNpc = G.activeJobOffer.npcId;
+    G.npcRelations[targetNpc] = Math.max(0, G.npcRelations[targetNpc] - 25);
+    G.npcPayCuts[targetNpc] = Math.min(30, G.npcPayCuts[targetNpc] + 15);
+    G.karma = Math.max(0, G.karma - 15);
+    alert(`⚠️ Вы легли спать, полностью проигнорировав утренний уговор с (${G.activeJobOffer.npcName})! Теряем доверие и репутацию.`);
+    G.activeJobOffer = null;
+  }
+
+  G.day++; 
+  G.energy = G.maxEnergy;
+  G.timeOfDay = 0; 
+
+  G.phoneRinging = false;
+  G.phoneCallType = null;
+  G.pendingJobOffer = null;
+  G.activeJobOffer = null;
+
+  for (let key in G.dailyTalks) { G.dailyTalks[key] = false; }
+  for (let key in G.completedTasksToday) { G.completedTasksToday[key] = false; }
+
+  G.pendingInvestments = G.pendingInvestments.filter(inv => {
+    if (G.day >= inv.returnDay) {
+      if (Math.random() < inv.chance) {
+        G.money += inv.amount;
+        alert(`🔔 УВЕДОМЛЕНИЕ: Инвестиция "${inv.label}" завершилась УСПЕШНО! 🎉\n📈 Она принесла доход! На ваш счет зачислено: +${inv.amount} эк.`);
+      } else {
+        alert(`🔔 УВЕДОМЛЕНИЕ: Инвестиция "${inv.label}" завершилась НЕУСПЕШНО. 📉\n❌ К сожалению, она прогорела. Деньги полностью потеряны.`);
+      }
+      return false;
+    }
+    return true;
+  });
+
+  if (G.hasTools) G.money += 35;
+  if (G.bank > 0) G.bank += Math.floor(G.bank * 0.10);
+
+  if (G.day % 7 === 1) {
+    let payment = 600;
+    if (G.bank >= payment) {
+      G.bank -= payment; G.debt = Math.max(0, G.debt - payment);
+      alert(`🔔 Конец недели! Списано ${payment} монет с банка на погашение долга.`);
+    } else {
+      G.karma = Math.max(0, G.karma - 20);
+      alert(`⚠️ На вкладе не оказалось ${payment} эк. для автоматической выплаты! Семья теряет карму!`);
+    }
+  }
+
+  rerollAllJobs(); 
+  generateRandomPhoneCall(); 
+  rollAvailableNpcs();
+  updateUI(); 
+  closeDialog(); 
+  checkGameOverConditions();
+  alert(`💤 Вы отлично выспались. Начался день ${G.day}. Энергия восстановлена! Все задачи обновлены.`);
+}
+
+function generateRandomPhoneCall() {
+  G.phoneRinging = true;
+  
+  if (Math.random() < 0.5) {
+    G.phoneCallType = 'scam_call';
+    G.pendingJobOffer = {
+      name: 'НЕИЗВЕСТНЫЙ НОМЕР',
+      text: 'Внимание! Это Служба Безопасности Центрального Банка Города. На имя вашего отца зафиксирована подозрительная активность кредиторов! Чтобы спасти сбережения, вы должны СРОЧНО перевести 120 эк. на наш безопасный резервный счёт. Вы согласны на перевод?'
+    };
+  } else {
+    G.phoneCallType = 'job_offer';
+    let npcPool = [
+      { id: 'trader', name: 'Михалыч', text: 'Здорово! На рынке накопилась новая работа. Давай договоримся: придешь точно ВЕЧЕРОМ, поможешь раскидать ящики — выдам жирные 140 монет! Идет?', targetTime: 1, type: 'slider' },
+      { id: 'neighbor', name: 'Сосед Игорь', text: 'Здравствуй, сынок. Нам нужно наколоть свежие дрова. Приходи к ВЕЧЕРУ, выдам честно заработанные 90 монет и поделюсь кармой.', targetTime: 1, type: 'ttt' }
+    ];
+    G.pendingJobOffer = npcPool[Math.floor(Math.random() * npcPool.length)];
+  }
+}
+
+const winningConditionsTTT = [
+  [0, 1, 2], [3, 4, 5], [6, 7, 8],
+  [0, 3, 6], [1, 4, 7], [2, 5, 8],
+  [0, 4, 8], [2, 4, 6]
+];
+
+function startMinigame(type, money, karma, npcId) {
+  minigameState.type = type;
+  minigameState.rewardMoney = money;
+  minigameState.rewardKarma = karma;
+  minigameState.currentNpcId = npcId;
+  minigameState.isBotThinking = false;
+  
+  const textEl = document.getElementById('dialog-text');
+  const choicesEl = document.getElementById('dialog-choices');
+  const visualEl = document.getElementById('minigame-visual');
+  
+  choicesEl.innerHTML = '';
+  visualEl.innerHTML = '';
+  visualEl.style.display = 'block';
+
+  if (type === 'ttt') {
+    minigameState.board = ['', '', '', '', '', '', '', '', ''];
+    visualEl.innerText = "📊 КРЕСТИКИ-НОЛИКИ:\n🎲 Твой ход (X)!";
+    textEl.textContent = 'Для победы собери линию Х. Ничья или проигрыш — провал задачи.';
+    renderTTT();
+  } 
+  else if (type === 'trash') {
+    visualEl.innerText = "⏳ Успей собрать весь мусор в коробку за 10 секунд!";
+    textEl.textContent = "Зажимай левую кнопку мыши на красных кубиках и тащи их вниз в коробку!";
+    
+    let zone = document.createElement('div'); zone.id = 'trash-zone';
+    let box = document.createElement('div'); box.id = 'trash-box'; box.innerText = "КОРОБКА";
+    zone.appendChild(box);
+    visualEl.appendChild(zone);
+
+    minigameState.trashLeft = 4;
+    for(let i=0; i<4; i++) {
+      let item = document.createElement('div');
+      item.className = 'trash-item';
+      item.innerText = '🗑️';
+      item.style.left = Math.random() * 70 + 5 + '%';
+      item.style.top = Math.random() * 40 + 5 + 'px';
+      
+      item.onmousedown = function(e) {
+        let shiftX = e.clientX - item.getBoundingClientRect().left;
+        let shiftY = e.clientY - item.getBoundingClientRect().top;
+        
+        function moveAt(clientX, clientY) {
+          let zoneRect = zone.getBoundingClientRect();
+          let newLeft = clientX - zoneRect.left - shiftX;
+          let newTop = clientY - zoneRect.top - shiftY;
+          
+          if(newLeft < 0) newLeft = 0;
+          if(newLeft > zoneRect.width - 30) newLeft = zoneRect.width - 30;
+          if(newTop < 0) newTop = 0;
+          if(newTop > zoneRect.height - 30) newTop = zoneRect.height - 30;
+          
+          item.style.left = newLeft + 'px';
+          item.style.top = newTop + 'px';
+
+          let boxRect = box.getBoundingClientRect();
+          let itemRect = item.getBoundingClientRect();
+          if (itemRect.left < boxRect.right && itemRect.right > boxRect.left &&
+              itemRect.top < boxRect.bottom && itemRect.bottom > boxRect.top) {
+            document.removeEventListener('mousemove', onMouseMove);
+            item.remove();
+            minigameState.trashLeft--;
+            if(minigameState.trashLeft <= 0) {
+              clearTimeout(minigameState.timerId);
+              endMinigame(true, "🎉 Отлично! Весь мусор собран в коробку вовремя!");
+            }
+          }
+        }
+
+        function onMouseMove(e) { moveAt(e.clientX, e.clientY); }
+        document.addEventListener('mousemove', onMouseMove);
+        document.onmouseup = function() { document.removeEventListener('mousemove', onMouseMove); document.onmouseup = null; };
+      };
+      
+      item.ontouchstart = function(e) {
+        let touch = e.touches[0];
+        let shiftX = touch.clientX - item.getBoundingClientRect().left;
+        let shiftY = touch.clientY - item.getBoundingClientRect().top;
+        
+        function onTouchMove(e) {
+          let t = e.touches[0];
+          let zoneRect = zone.getBoundingClientRect();
+          let newLeft = t.clientX - zoneRect.left - shiftX;
+          let newTop = t.clientY - zoneRect.top - shiftY;
+          item.style.left = newLeft + 'px';
+          item.style.top = newTop + 'px';
+          
+          let boxRect = box.getBoundingClientRect();
+          let itemRect = item.getBoundingClientRect();
+          if (itemRect.left < boxRect.right && itemRect.right > boxRect.left &&
+              itemRect.top < boxRect.bottom && itemRect.bottom > boxRect.top) {
+            document.removeEventListener('touchmove', onTouchMove);
+            item.remove();
+            minigameState.trashLeft--;
+            if(minigameState.trashLeft <= 0) {
+              clearTimeout(minigameState.timerId);
+              endMinigame(true, "🎉 Успешно собрано зажатием!");
+            }
+          }
+        }
+        document.addEventListener('touchmove', onTouchMove);
+        document.ontouchend = function() { document.removeEventListener('touchmove', onTouchMove); };
+      };
+
+      zone.appendChild(item);
+    }
+
+    minigameState.timerId = setTimeout(() => {
+      endMinigame(false, "⏰ Время вышло! Ты не успел собрать мусор.");
+    }, 10000);
+  }
+  else if (type === 'memory') {
+    let num1 = Math.floor(Math.random() * 10);
+    let num2 = Math.floor(Math.random() * 10);
+    let num3 = Math.floor(Math.random() * 10);
+    let num4 = Math.floor(Math.random() * 10);
+    minigameState.sequence = `${num1}${num2}${num3}${num4}`;
+
+    visualEl.innerHTML = `<div style="font-size:22px; color:#ff0; margin:10px 0;">${minigameState.sequence}</div><div>ЗАПОМНИ ЧИСЛО!</div>`;
+    textEl.textContent = "У тебя есть ровно 2 секунды, чтобы запомнить эти 4 цифры!";
+
+    setTimeout(() => {
+      if (minigameState.type !== 'memory') return;
+      visualEl.innerHTML = `
+        <div>Введите запомненные 4 цифры:</div>
+        <div id="memory-input-container">
+          <input type="text" id="memory-input" maxlength="4" autocomplete="off">
+        </div>
+      `;
+      textEl.textContent = "Введи комбинацию в поле ввода ниже и подтверди решение.";
+      
+      let btn = document.createElement('button');
+      btn.className = 'choice-btn';
+      btn.innerText = "— [ Проверить код ]";
+      btn.onclick = () => {
+        let val = document.getElementById('memory-input').value.trim();
+        if(val === minigameState.sequence) {
+          endMinigame(true, "🎉 Верно! Память тебя не подвела.");
+        } else {
+          endMinigame(false, `❌ Ошибка! Правильный код был: ${minigameState.sequence}`);
+        }
+      };
+      choicesEl.appendChild(btn);
+    }, 2300);
+  }
+  else if (type === 'slider') {
+    visualEl.innerText = "🎯 Нажми кнопку ниже вовремя, чтобы остановить ползунок в ЗЕЛЕНОЙ ЗОНЕ!";
+    textEl.textContent = "Ползунок постоянно бегает по дорожке. Нужен точный тайминг.";
+
+    let track = document.createElement('div'); track.id = 'slider-track';
+    let zone = document.createElement('div'); zone.id = 'slider-zone';
+    let runner = document.createElement('div'); runner.id = 'slider-runner';
+    
+    minigameState.sliderTargetMin = Math.floor(Math.random() * 50) + 10; 
+    minigameState.sliderTargetMax = minigameState.sliderTargetMin + 20;  
+    zone.style.left = minigameState.sliderTargetMin + '%';
+    
+    track.appendChild(zone);
+    track.appendChild(runner);
+    visualEl.appendChild(track);
+
+    minigameState.sliderPos = 0;
+    minigameState.sliderDir = 2.5; 
+
+    function animateSlider() {
+      if (minigameState.type !== 'slider') return;
+      minigameState.sliderPos += minigameState.sliderDir;
+      if (minigameState.sliderPos >= 98 || minigameState.sliderPos <= 0) {
+        minigameState.sliderDir *= -1;
+      }
+      runner.style.left = minigameState.sliderPos + '%';
+      minigameState.sliderAnimId = requestAnimationFrame(animateSlider);
+    }
+    animateSlider();
+
+    let btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.innerText = "— [ 🛑 ОСТАНОВИТЬ ПОЛЗУНОК ]";
+    btn.onclick = () => {
+      cancelAnimationFrame(minigameState.sliderAnimId);
+      let pos = minigameState.sliderPos;
+      if (pos >= minigameState.sliderTargetMin && pos <= minigameState.sliderTargetMax) {
+        endMinigame(true, "🎉 Идеальное попадание! Ты поймал ползунок в нужной зоне.");
+      } else {
+        endMinigame(false, "❌ Мимо! Ползунок остановился вне безопасной зоны.");
+      }
+    };
+    choicesEl.appendChild(btn);
+  }
+}
+
+function renderTTT() {
+  const choicesEl = document.getElementById('dialog-choices');
+  let grid = choicesEl.querySelector('.ttt-grid');
+  if (!grid) {
+    grid = document.createElement('div');
+    grid.className = 'ttt-grid';
+    choicesEl.appendChild(grid);
+  }
+  grid.innerHTML = '';
+  
+  minigameState.board.forEach((cell, idx) => {
+    let div = document.createElement('div');
+    div.className = 'ttt-cell';
+    if (cell !== '') div.classList.add('taken');
+    div.textContent = cell;
+    
+    if (cell === '' && !minigameState.isBotThinking) {
+      div.onclick = () => playerTTTMove(idx);
+    }
+    grid.appendChild(div);
+  });
+}
+
+function playerTTTMove(idx) {
+  if (minigameState.isBotThinking) return;
+  
+  minigameState.board[idx] = 'X';
+  renderTTT();
+  
+  if (checkTTTWin('X')) { 
+    endMinigame(true, 'ПОБЕДА! Вы собрали линию крестиков и обыграли соперника!'); 
+    return; 
+  }
+  if (minigameState.board.every(c => c !== '')) { 
+    endMinigame(false, 'НИЧЬЯ! Победитель не определен. Задание провалено.'); 
+    return; 
+  }
+  
+  minigameState.isBotThinking = true;
+  renderTTT(); 
+  
+  const visualEl = document.getElementById('minigame-visual');
+  visualEl.innerText = "📊 КРЕСТИКИ-НОЛИКИ:\n🤖 Соперник думает...";
+  
+  const thinkingDelay = Math.random() * 600 + 600; 
+  setTimeout(botTTTMove, thinkingDelay);
+}
+
+function botTTTMove() {
+  if (minigameState.type !== 'ttt') return;
+  
+  const availableMoves = minigameState.board.map((val, idx) => val === '' ? idx : null).filter(val => val !== null);
+  if (availableMoves.length === 0) return;
+  
+  let chosenMove = null;
+  const isDistracted = Math.random() < 0.30;
+  
+  if (!isDistracted) {
+    chosenMove = findTacticalTTTMove('O');
+    if (chosenMove === null) {
+      chosenMove = findTacticalTTTMove('X');
+    }
+  }
+  
+  if (chosenMove === null) {
+    if (minigameState.board[4] === '' && Math.random() < 0.5) {
+      chosenMove = 4;
+    } else {
+      const randomIdx = Math.floor(Math.random() * availableMoves.length);
+      chosenMove = availableMoves[randomIdx];
+    }
+  }
+  
+  minigameState.board[chosenMove] = 'O';
+  minigameState.isBotThinking = false;
+  
+  const visualEl = document.getElementById('minigame-visual');
+  visualEl.innerText = "📊 КРЕСТИКИ-НОЛИКИ:\n🎲 Твой ход (X)!";
+  renderTTT();
+  
+  if (checkTTTWin('O')) { 
+    endMinigame(false, 'ПРОИГРЫШ! Вас обошел местный житель. Задание провалено.'); 
+    return; 
+  }
+  if (minigameState.board.every(c => c !== '')) { 
+    endMinigame(false, 'НИЧЬЯ! Нам нужен был идеальный результат. Задание провалено.'); 
+    return; 
+  }
+}
+
+function findTacticalTTTMove(playerSign) {
+  for (let condition of winningConditionsTTT) {
+    const [a, b, c] = condition;
+    const values = [minigameState.board[a], minigameState.board[b], minigameState.board[c]];
+    
+    if (values.filter(v => v === playerSign).length === 2 && values.filter(v => v === '').length === 1) {
+      if (minigameState.board[a] === '') return a;
+      if (minigameState.board[b] === '') return b;
+      if (minigameState.board[c] === '') return c;
+    }
+  }
+  return null;
+}
+
+function checkTTTWin(p) {
+  return winningConditionsTTT.some(comb => comb.every(idx => minigameState.board[idx] === p));
+}
+
+function endMinigame(success, message, heavyPenalty = false) {
+  resetInput(); 
+  if (minigameState.timerId) clearTimeout(minigameState.timerId);
+  if (minigameState.sliderAnimId) cancelAnimationFrame(minigameState.sliderAnimId);
+  
+  alert(message);
+  document.getElementById('minigame-visual').style.display = 'none';
+  
+  let npcId = minigameState.currentNpcId;
+
+  if (success) {
+    playSfx('win');
+    let finalMoney = minigameState.rewardMoney;
+    if (G.npcPayCuts[npcId]) {
+      finalMoney = Math.max(10, finalMoney - G.npcPayCuts[npcId]);
+    }
+    G.money += finalMoney;
+    G.karma = Math.max(0, Math.min(100, G.karma + minigameState.rewardKarma));
+    G.npcRelations[npcId] = Math.min(100, G.npcRelations[npcId] + 5);
+    if (npcId in G.completedTasksToday) G.completedTasksToday[npcId] = true;
+  } else {
+    playSfx('lose');
+    G.npcRelations[npcId] = Math.max(0, G.npcRelations[npcId] - 10);
+    if (heavyPenalty) {
+      G.karma = Math.max(0, G.karma - 15);
+    }
+    if (npcId in G.completedTasksToday) G.completedTasksToday[npcId] = true;
+  }
+  
+  if (npcId === 'girl') {
+    performActionTwoPhases();
+  } else {
+    performAction();
+  }
+
+  minigameState = {
+    type: null, board: [], targetCode: [], attempts: 0, correctShell: 0, 
+    rewardMoney: 0, rewardKarma: 0, currentNpcId: null, trashLeft: 0, timerId: null, sequence: '', sliderPos: 0, sliderDir: 1, sliderTargetMin: 0, sliderTargetMax: 0, sliderAnimId: null,
+    isBotThinking: false
+  };
+
+  closeDialog();
+}
+
+function updatePlayer() {
+  if (isDialogOpen) { player.vx = 0; player.isMoving = false; currentAnimState = 'idle'; return; }
+  player.vx = 0;
+  if (keys['ArrowLeft'] || keys['KeyA']) {
+    player.vx = -player.speed;
+    player.facing = 'left';
+  }
+
+  if (keys['ArrowRight'] || keys['KeyD']) {
+    player.vx = player.speed;
+    player.facing = 'right';
+  }
+  player.x += player.vx; player.isMoving = player.vx !== 0;
+  let newState = player.isMoving ? 'run' : 'idle';
+  if (newState !== currentAnimState) { currentAnimState = newState; animConfig.currentFrame = 0; animConfig.tick = 0; }
+
+  const loc = locations[G.currentLocation];
+  if (player.x < loc.walls.left) player.x = loc.walls.left;
+  if (player.x > loc.walls.right - player.width) player.x = loc.walls.right - player.width;
+
+  loc.cameraX = player.x - canvas.width / 2;
+  if (loc.cameraX < 0) loc.cameraX = 0;
+  if (loc.cameraX > loc.walls.right - canvas.width) loc.cameraX = loc.walls.right - canvas.width;
+
+  let found = null;
+  loc.objects.forEach(obj => { if ((obj.type === 'door' || obj.type === 'phone' || obj.type === 'bed') && checkCollision(player, obj)) found = { type: 'object', data: obj }; });
+  loc.npcs.forEach(npc => { if (checkCollision(player, npc)) found = { type: 'npc', data: npc }; });
+  activeInteraction = found;
+  document.getElementById('interaction-prompt').style.display = found ? 'block' : 'none';
+}
+
+function checkCollision(r1, r2) { return r1.x < r2.x + r2.width && r1.x + r1.width > r2.x && r1.y < r2.y + r2.height && r1.y + r1.height > r2.y; }
+
+function handleInteractionKey(code) {
+  if (code !== 'KeyE' || !activeInteraction) return;
+  if (isPhoneDialogOpen) return; 
+  if (isDialogOpen) { 
+    if (isTyping) { clearInterval(typewriterInterval); document.getElementById('dialog-text').textContent = currentFullText; isTyping = false; renderChoices(); } 
+    else { if (!minigameState.type) closeDialog(); }
+    return; 
+  }
+  
+  const { type, data } = activeInteraction;
+  if (type === 'object') {
+    if (data.type === 'door') {
+      resetInput();
+      G.currentLocation = data.target; 
+      player.x = data.target === 'city' ? 90 : 1450; 
+      resizeCanvas(); 
+      closeDialog();
+      playMusicForLocation(G.currentLocation);
+    } else if (data.type === 'phone') { openPhoneDialog(); }
+    else if (data.type === 'bed') { triggerSleep(); }
+  } else if (type === 'npc') { openDialog(data); }
+}
+
+function openDialog(npc) {
+  resetInput(); 
+  isDialogOpen = true;
+  document.getElementById('dialog-box').style.display = 'flex';
+  showNode(npc, 'start');
+}
+
+function openPhoneDialog() {
+  resetInput();
+  isDialogOpen = true;
+  isPhoneDialogOpen = true;
+  document.getElementById('dialog-box').style.display = 'flex';
+  document.getElementById('minigame-visual').style.display = 'none';
+  
+  const textEl = document.getElementById('dialog-text'); 
+  const choicesEl = document.getElementById('dialog-choices');
+  const portraitEl = document.getElementById('dialog-portrait'); 
+  const nameEl = document.getElementById('dialog-name');
+  
+  portraitEl.textContent = '📞'; 
+  choicesEl.innerHTML = '';
+
+  if (!G.phoneRinging || !G.pendingJobOffer) {
+    nameEl.textContent = 'ТЕЛЕФОН'; 
+    currentFullText = '* В трубке слышны монотонные длинные гудки. На другом конце никто не отвечает.';
+    textEl.textContent = currentFullText; 
+    isTyping = false;
+    let btn = document.createElement('button'); btn.className = 'choice-btn'; btn.textContent = '— [ Положить трубку ]'; btn.onclick = closeDialog;
+    choicesEl.appendChild(btn); 
+    return;
+  }
+
+  if (G.phoneCallType === 'scam_call') {
+    nameEl.textContent = G.pendingJobOffer.name;
+    currentFullText = `* «${G.pendingJobOffer.text}»`;
+
+    let c1 = document.createElement('button'); c1.className = 'choice-btn';
+    c1.textContent = '— Согласиться';
+    c1.onclick = () => {
+      let lost = Math.min(G.money, 120);
+      G.money -= lost;
+      G.karma = Math.max(0, G.karma - 15);
+      G.phoneRinging = false; G.phoneCallType = null; G.pendingJobOffer = null;
+      closeDialog(); updateUI();
+      alert(`💸 Мошенники списали ${lost} эк. Репутация -15%.`);
+      checkGameOverConditions();
+    };
+    let c2 = document.createElement('button'); c2.className = 'choice-btn';
+    c2.textContent = '— Отказаться';
+    c2.onclick = () => {
+      G.phoneRinging = false; G.phoneCallType = null; G.pendingJobOffer = null;
+      closeDialog();
+      alert(`🚫 Вы повесили трубку. Деньги сохранены.`);
+    };
+    choicesEl.appendChild(c1); choicesEl.appendChild(c2);
+
+    clearInterval(typewriterInterval); textEl.textContent = ""; isTyping = true; let charIndex = 0;
+    typewriterInterval = setInterval(() => {
+      textEl.textContent += currentFullText[charIndex++];
+      if (charIndex % 3 === 0) playSfx('rep');
+      if (charIndex >= currentFullText.length) { clearInterval(typewriterInterval); isTyping = false; }
+    }, 30);
+  }
+  else if (G.phoneCallType === 'job_offer') {
+    nameEl.textContent = G.pendingJobOffer.name.toUpperCase();
+    currentFullText = `* «${G.pendingJobOffer.text}»`;
+
+    let c1 = document.createElement('button'); c1.className = 'choice-btn';
+    c1.textContent = '— Согласиться';
+    c1.onclick = () => {
+      G.activeJobOffer = {
+        npcId: G.pendingJobOffer.id,
+        npcName: G.pendingJobOffer.name,
+        targetTime: G.pendingJobOffer.targetTime,
+        minigame: G.pendingJobOffer.type
+      };
+      G.phoneRinging = false; G.phoneCallType = null; G.pendingJobOffer = null;
+      closeDialog();
+      alert(`📅 Задание принято! Найдите персонажа в нужное время суток.`);
+    };
+    let c2 = document.createElement('button'); c2.className = 'choice-btn';
+    c2.textContent = '— Отказаться';
+    c2.onclick = () => { G.phoneRinging = false; G.phoneCallType = null; G.pendingJobOffer = null; closeDialog(); };
+    choicesEl.appendChild(c1); choicesEl.appendChild(c2);
+
+    clearInterval(typewriterInterval); textEl.textContent = ""; isTyping = true; let charIndex = 0;
+    typewriterInterval = setInterval(() => {
+      textEl.textContent += currentFullText[charIndex++];
+      if (charIndex % 3 === 0) playSfx('rep');
+      if (charIndex >= currentFullText.length) { clearInterval(typewriterInterval); isTyping = false; }
+    }, 30);
+  }
+}
+
+function toggleFullscreen() { const container = document.getElementById('game-container'); if (!document.fullscreenElement) container.requestFullscreen().catch(e => alert(e.message)); else document.exitFullscreen(); }
+function closeDialog() { 
+  if (minigameState.isBotThinking) return; 
+  resetInput(); 
+  clearInterval(typewriterInterval); 
+  isTyping = false; 
+  isDialogOpen = false;
+  isPhoneDialogOpen = false;
+  if (minigameState.timerId) clearTimeout(minigameState.timerId);
+  if (minigameState.sliderAnimId) cancelAnimationFrame(minigameState.sliderAnimId);
+  document.getElementById('dialog-box').style.display = 'none'; 
+  document.getElementById('minigame-visual').style.display = 'none'; 
+}
+
+let currentNodeData = null; let currentNPCData = null;
+
+function showNode(npc, nodeId) {
+  const textEl = document.getElementById('dialog-text'); const choicesEl = document.getElementById('dialog-choices');
+  const portraitEl = document.getElementById('dialog-portrait'); const nameEl = document.getElementById('dialog-name');
+
+  portraitEl.textContent = npc.portrait || '👤'; nameEl.textContent = npc.name.toUpperCase(); choicesEl.innerHTML = '';
+  const node = dialogTrees[npc.type](nodeId); 
+  currentFullText = node.text; currentNodeData = node; currentNPCData = npc;
+
+  clearInterval(typewriterInterval); textEl.textContent = ""; isTyping = true; let charIndex = 0;
+  typewriterInterval = setInterval(() => {
+    textEl.textContent += currentFullText[charIndex++];
+    if (charIndex % 3 === 0) playSfx('rep');
+    if (charIndex >= currentFullText.length) { clearInterval(typewriterInterval); isTyping = false; renderChoices(); }
+  }, 30);
+}
+
+function renderChoices() {
+  const choicesEl = document.getElementById('dialog-choices'); choicesEl.innerHTML = '';
+  currentNodeData.choices.forEach(c => {
+    if (c.condition && !c.condition()) return;
+    const btn = document.createElement('button'); btn.className = 'choice-btn'; btn.textContent = c.text;
+    btn.onclick = (e) => {
+      e.stopPropagation(); if (c.action) c.action();
+      if (c.nextNode) showNode(currentNPCData, c.nextNode); else if (!c.keepOpen) closeDialog();
+    };
+    choicesEl.appendChild(btn);
+  });
+}
+
+function applyTalkEffect(npcId, textSuccess) {
+  G.dailyTalks[npcId] = true;
+  G.karma = Math.min(100, G.karma + 4); 
+  G.npcRelations[npcId] = Math.min(100, G.npcRelations[npcId] + 8); 
+  updateUI();
+  alert(textSuccess);
+}
+
+function phoneJobNode(npcId) {
+  const offer = G.activeJobOffer;
+  const timeNames = ['утром', 'вечером', 'ночью'];
+  const isRightTime = offer && offer.npcId === npcId && G.timeOfDay === offer.targetTime;
+  const isWrongTime = offer && offer.npcId === npcId && G.timeOfDay !== offer.targetTime;
+  return {
+    text: isWrongTime
+      ? `* «Договаривались ${timeNames[offer.targetTime]}! Приходи в нужное время.»`
+      : `* «Отлично, ты пришёл! Давай приступим к делу.»`,
+    choices: isWrongTime
+      ? [{ text: '— Извини, приду позже.', nextNode: null }]
+      : [
+          { text: '— [ Выполнить задание ]', keepOpen: true, action: () => {
+              startMinigame(offer.minigame, 140, 5, npcId);
+              G.activeJobOffer = null;
+            }
+          },
+          { text: '— Назад.', nextNode: 'start' }
+        ]
+  };
+}
+
+const dialogTrees = {
+  father: (nodeId) => {
+    if (!G.hasOwnProperty('introDone')) {
+      G.introDone = false;
+    }
+
+    const nodes = {
+      start: {
+        text: `* Отец устало растирает виски.\n* Общий долг: ${G.debt} эк. (Осталось дней: ${31 - G.day})\n* Репутация в городе: ${G.karma}%.\n\n` +
+              (G.karma < 40 ? `* «Сын... Соседи косятся на наш дом. Слухи о нашем долге расползаются, они обсуждают нас за спиной.»` : `* «Сын, старайся не задерживаться на улицах допоздна. Ночью город становится опасным.»`),
+        choices: [
+          { text: '— [ Расспросить об основах ] «Отец, напомни, как нам выжить в этом городе?»', condition: () => !G.introDone, nextNode: 'tutorial_1' },
+          { text: '— Давай разберемся с накоплениями на сберкнижке.', nextNode: 'bank_management' },
+          { text: `— Я внесу наличные на оплату долга (${G.money} эк.)`, condition: () => G.money > 0, action: () => { G.debt = Math.max(0, G.debt - G.money); G.money = 0; updateUI(); checkGameOverConditions(); }, nextNode: 'start' },
+          { text: '— Я пошел работать, отдыхай.', nextNode: null }
+        ]
+      },
+      tutorial_1: {
+        text: `* Отец тяжело вздыхает, смотрит тебе в глаза и начинает говорить:\n\n` +
+              `«Слушай меня внимательно, сын. Город ошибок не прощает. Каждое твое действие — будь то работа у Михалыча, помощь Игорю, швее Эвелин или Кире — отнимает 1 единицу ЭНЕРГИИ и продвигает ВРЕМЯ суток на один шаг вперед: День, Вечет, Ночь. Кира гоняет тебя сильнее — ее доставки забирают сразу 2 фазы времени. Всего у тебя есть 3 единицы энергии на день. Тратишь всё — и ты без сил. Возвращайся к кровати и ложись спать, чтобы восстановиться.»`,
+        choices: [
+          { text: '— «Понял. А что насчет заработка и долга?»', nextNode: 'tutorial_2' }
+        ]
+      },
+      tutorial_2: {
+        text: `«Наш главный враг — ДОЛГ в 5000 эк. Каждое воскресенье (раз в 7 дней) банк автоматически списывает 600 эк. с нашей СБЕРКНИЖКИ. Если там не окажется нужной суммы, мы потеряем 20% КАРМЫ! Сама сберкнижка — полезная штука, каждую ночь она приносит нам +10% пассивного дохода на остаток счета. \n\n` +
+              `Зарабатывать можно по-разному. Обувщик Марк позволяет перепродавать аккумуляторы, а на заброшенном огороде на окраине можно вырастить редкий редис за 3 дня и выгодно его продать. Михалыч также продает инструменты за 250 эк. — они дают +35 эк. пассивно каждую ночь.»`,
+        choices: [
+          { text: '— «А что за Серый тип на окраине? И почему важна Репутация?»', nextNode: 'tutorial_3' }
+        ]
+      },
+      tutorial_3: {
+        text: `«Серый тип предлагает огромные деньги, но связываться с ним опасно. Он ведет дела только НОЧЬЮ. Его грязные поручения сокрушают нашу КАРМУ и репутацию. \n\n` +
+              `Если наша общая репутация упадет до 0% — нас вышвырнут на улицу как изгоев, и это конец. К тому же, если репутация ниже 40%, честные люди (Михалыч и Игорь) начинают презирать нас и урезать выплаты за работу на 30-40%! \n\n` +
+              `И еще: иногда дома звонит ТЕЛЕФОН. Кто-то из жителей может предложить выгодную сделку на Вечер. Но берегись подозрительных звонков: в городе орудуют телефонные мошенники!»`,
+        choices: [
+          { text: '— «Спасибо, отец. Я всё понял. Теперь мы точно прорвемся.»', action: () => { G.introDone = true; }, nextNode: 'start' }
+        ]
+      },
+      bank_management: {
+        text: `* Сберкнижка: ${G.bank} эк. Наш ночной пассивный прирост: +10%.\nКакое решение примем?`,
+        choices: [
+          { text: `— Положить всю наличность на книжку (${G.money} эк.)`, condition: () => G.money > 0, action: () => { G.bank += G.money; G.money = 0; updateUI(); }, nextNode: 'bank_management' },
+          { text: `— Забрать абсолютно все средства со счета (${G.bank} эк.)`, condition: () => G.bank > 0, action: () => { G.money += G.bank; G.bank = 0; updateUI(); }, nextNode: 'bank_management' },
+          { text: '— Давай вернемся назад.', nextNode: 'start' }
+        ]
+      }
+    };
+    return nodes[nodeId];
+  },
+  
+  trader: (nodeId) => ({
+    start: {
+      text: `* Михалыч (Отношения: ${G.npcRelations.trader}%, Штраф: -${G.npcPayCuts.trader} эк.)\n` +
+            (!isNpcAvailableToday('trader') ? `* «Сегодня занят по горло, парень. Завтра приходи.»` :
+            G.timeOfDay === 2 ? `* «Уже ночь на дворе, склады закрыты. Приходи завтра с утра!»` :
+            G.completedTasksToday.trader ? `* «Молодец, поработал сегодня! На сегодня работы больше нет. Возвращайся завтра.»` :
+            `* «Чего хотел, парень? Могу подкинуть работенку или просто поболтать.»`),
+      choices: !isNpcAvailableToday('trader') ? [{ text: '— Понял, зайду завтра.', nextNode: null }] :
+               G.timeOfDay === 2 ? [{ text: '— Понял, приду завтра.', nextNode: null }] :
+               G.completedTasksToday.trader ? [{ text: '— До завтра, Михалыч.', nextNode: null }] : [
+        ...(G.activeJobOffer && G.activeJobOffer.npcId === 'trader' ? [{ text: `— [ ☎ Выполнить задание по звонку ]`, nextNode: 'phone_job' }] : []),
+        { text: '— [ Взять обычное поручение ]', nextNode: 'job_node' },
+        { text: '— [ Инвестировать в товарную партию ]', nextNode: 'invest_node' },
+        { text: '— [ Поговорить по душам ]', condition: () => !G.dailyTalks.trader, nextNode: 'talk_node' },
+        { text: '— Мне пора.', nextNode: null }
+      ]
+    },
+    phone_job: phoneJobNode('trader'),
+    job_node: {
+      text: G.energy <= 0 ? `* «Ты еле на ногах стоишь. Упадешь еще. Иди спи!»` : `* Доступное поручение: "${G.currentNpcJobs.trader.text}"`,
+      choices: G.energy <= 0 ? [{ text: '— Ладно...', nextNode: null }] : [
+        { text: '— [ Начать выполнение поручения (-1 энергия) ]', keepOpen: true, action: () => {
+            let moneyReward = G.currentNpcJobs.trader.money;
+            if (G.karma < 40) moneyReward = Math.floor(moneyReward * 0.7); 
+            startMinigame(G.currentNpcJobs.trader.type, moneyReward, G.currentNpcJobs.trader.karma, 'trader');
+          } 
+        },
+        { text: '— [ Купить инструменты: 250 эк. (Пассив +35 каждую ночь) ]', condition: () => !G.hasTools && G.money >= 250, action: () => { G.money -= 250; G.hasTools = true; updateUI(); }, nextNode: 'start' },
+        { text: '— Я передумал.', nextNode: 'start' }
+      ]
+    },
+    invest_node: {
+      text: `* Михалыч щурится:\n«Есть идея вложиться в оптовую партию угля. Вернется через 2 дня, но рынок непредсказуем — шанс 60%. Стоит 80 монет.»`,
+      choices: [
+        { text: '— [ Вложить 80 монет в партию угля (60% шанс, x2.5 через 2 дня) ]',
+          condition: () => G.money >= 80,
+          action: () => {
+            G.money -= 80;
+            G.pendingInvestments.push({ label: 'Партия угля (Михалыч)', returnDay: G.day + 2, amount: 200, chance: 0.6 });
+            G.completedTasksToday.trader = true;
+            performAction(); updateUI();
+            alert('📦 Вы вложили 80 монет в партию угля. Результат — через 2 дня.');
+          }, nextNode: null },
+        { text: '— Слишком рискованно. Назад.', nextNode: 'start' }
+      ]
+    },
+    talk_node: {
+      text: `* Михалыч вздыхает и поправляет кепку:\n«Да как... Налоги душат, фабричные корпораты вытесняют честных торговцев. Но твоего отца я помню хорошим человеком. Жаль, что система его сожрала. Ты держись, малый, не ломайся.»`,
+      choices: [
+        { text: '— [ Поблагодарить за поддержку ] Спасибо, Михалыч. Это важно.', action: () => applyTalkEffect('trader', '❤️ Разговор с Михалычем укрепил дух! Репутация +4%, Отношения повышены.') }
+      ]
+    }
+  })[nodeId],
+
+  girl: (nodeId) => ({
+    start: {
+      text: `* Кира смотрит на тебя со своей обычной дерзостью. (Отношения: ${G.npcRelations.girl}%)\n` +
+            (!isNpcAvailableToday('girl') ? `* «Сегодня у меня свои дела. Приходи завтра.»` :
+            G.timeOfDay === 2 ? `* «Ночью почтовые отделения закрыты, да и мне спать пора. Завтра приходи.»` :
+            G.completedTasksToday.girl ? `* «Сегодня уже всё сделано, хватит носиться. Приходи завтра.»` :
+            `* «У меня куча забот по доставкам. Подсобишь?»`),
+      choices: !isNpcAvailableToday('girl') ? [{ text: '— Хорошо, Кира.', nextNode: null }] :
+               G.timeOfDay === 2 ? [{ text: '— Ладно, до завтра, Кира.', nextNode: null }] :
+               G.completedTasksToday.girl ? [{ text: '— Хорошо, Кира. До завтра.', nextNode: null }] : [
+        ...(G.activeJobOffer && G.activeJobOffer.npcId === 'girl' ? [{ text: `— [ ☎ Выполнить задание по звонку ]`, nextNode: 'phone_job' }] : []),
+        { text: '— [ Взять обычное поручение ]', nextNode: 'job_node' },
+        { text: '— [ Вложить деньги в почтовый маршрут ]', nextNode: 'invest_node' },
+        { text: '— [ Поговорить по душам ]', condition: () => !G.dailyTalks.girl, nextNode: 'talk_node' },
+        { text: '— У меня сейчас другие дела.', nextNode: null }
+      ]
+    },
+    phone_job: phoneJobNode('girl'),
+    job_node: {
+      text: G.energy < 1 ? `* «Слушай, ты выглядишь слишком уставшим! Отдохни.»` : `* Задание от Киры: "${G.currentNpcJobs.girl.text}"`,
+      choices: G.energy < 1 ? [{ text: '— Понял.', nextNode: null }] : [
+        { text: '— [ Приступить к заданию ]', keepOpen: true, action: () => startMinigame(G.currentNpcJobs.girl.type, G.currentNpcJobs.girl.money, G.currentNpcJobs.girl.karma, 'girl') },
+        { text: '— Передумал.', nextNode: 'start' }
+      ]
+    },
+    invest_node: {
+      text: `* Кира хитро прищуривается:\n«Я открываю новый маршрут в богатый квартал. Нужны деньги на взятку привратнику. Вложи 100 монет — если всё выгорит (55% шанс), через 3 дня получишь 250. Но город непредсказуем.»`,
+      choices: [
+        { text: '— [ Вложить 100 монет в маршрут (55% шанс, +250 через 3 дня) ]',
+          condition: () => G.money >= 100,
+          action: () => {
+            G.money -= 100;
+            G.pendingInvestments.push({ label: 'Маршрут Киры', returnDay: G.day + 3, amount: 250, chance: 0.55 });
+            G.completedTasksToday.girl = true;
+            performActionTwoPhases(); updateUI();
+            alert('📬 Вложено 100 монет в новый маршрут Киры. Результат — через 3 дня.');
+          }, nextNode: null },
+        { text: '— Слишком рискованно. Назад.', nextNode: 'start' }
+      ]
+    },
+    talk_node: {
+      text: `* Кира задумчиво перебирает письма:\n«Движение — это жизнь в нашем сером Городе. Пока я бегу по улицам, я чувствую себя свободной от этой фабричной гари и душных законов. К тому же, люди ждут новостей от близких... Это помогает чувствовать себя полезной.»`,
+      choices: [
+        { text: '— [ Выслушать и улыбнуться ] Отличный взгляд на вещи.', action: () => applyTalkEffect('girl', '❤️ Вы узнали Киру получше! Репутация +4%, Отношения повышены.') }
+      ]
+    }
+  })[nodeId],
+
+  neighbor: (nodeId) => ({
+    start: {
+      text: `* Игорь (Отношения: ${G.npcRelations.neighbor}%, Штраф: -${G.npcPayCuts.neighbor} эк.)\n` +
+            (!isNpcAvailableToday('neighbor') ? `* «Сегодня устал, сынок. Заходи завтра, помогу.»` :
+            G.timeOfDay === 2 ? `* «Поздно уже, старик ложится отдыхать. Приходи завтра днем!»` :
+            G.completedTasksToday.neighbor ? `* «Хорошо потрудился, сынок! На сегодня всё, завтра снова помогу.»` :
+            `* «Здравствуй, сынок. Нужна помощь со старым хозяйством?»`),
+      choices: !isNpcAvailableToday('neighbor') ? [{ text: '— Хорошо, дядя Игорь.', nextNode: null }] :
+               G.timeOfDay === 2 ? [{ text: '— Доброй ночи, дядя Игорь.', nextNode: null }] :
+               G.completedTasksToday.neighbor ? [{ text: '— Хорошо, дядя Игорь. До завтра!', nextNode: null }] : [
+        ...(G.activeJobOffer && G.activeJobOffer.npcId === 'neighbor' ? [{ text: `— [ ☎ Выполнить задание по звонку ]`, nextNode: 'phone_job' }] : []),
+        { text: '— [ Взять обычное поручение ]', nextNode: 'job_node' },
+        { text: '— [ Вложить в пчеловодство Игоря ]', nextNode: 'invest_node' },
+        { text: '— [ Поговорить по душам ]', condition: () => !G.dailyTalks.neighbor, nextNode: 'talk_node' },
+        { text: '— Мне пора бежать.', nextNode: null }
+      ]
+    },
+    phone_job: phoneJobNode('neighbor'),
+    job_node: {
+      text: G.energy <= 0 ? `* «Ой, да ты сам бледный как поганка. Ступай домой отдохни!»` : `* Задача от Игоря: "${G.currentNpcJobs.neighbor.text}"`,
+      choices: G.energy <= 0 ? [{ text: '— Хорошо...', nextNode: null }] : [
+        { text: '— [ Помочь дедушке (-1 энергия) ]', keepOpen: true, action: () => {
+            let moneyReward = G.currentNpcJobs.neighbor.money;
+            if (G.karma < 40) moneyReward = Math.floor(moneyReward * 0.6); 
+            startMinigame(G.currentNpcJobs.neighbor.type, moneyReward, G.currentNpcJobs.neighbor.karma, 'neighbor');
+          } 
+        },
+        { text: '— Я скоро вернусь.', nextNode: 'start' }
+      ]
+    },
+    invest_node: {
+      text: `* Игорь оживляется:\n«У меня на даче стоят ульи, да денег на новые рамки нет. Вложишь 60 монет — через 2 дня привезу мёд на продажу. Удача улыбается в 65% случаев. Природа, она такая...»`,
+      choices: [
+        { text: '— [ Вложить 60 монет в пасеку (65% шанс, +160 через 2 дня) ]',
+          condition: () => G.money >= 60,
+          action: () => {
+            G.money -= 60;
+            G.pendingInvestments.push({ label: 'Пасека Игоря', returnDay: G.day + 2, amount: 160, chance: 0.65 });
+            G.completedTasksToday.neighbor = true;
+            performAction(); updateUI();
+            alert('🍯 Вложено 60 монет в пасеку Игоря. Результат — через 2 дня.');
+          }, nextNode: null },
+        { text: '— Не сейчас. Назад.', nextNode: 'start' }
+      ]
+    },
+    talk_node: {
+      text: `* Игорь опирается на трость:\n«Да скриплю понемногу, сынок. Старые раны к дождю ноют. В Эпоху Капитала старики никому не нужны, если от них нет прибыли... Рад, что ты заходишь навещать. Твой отец воспитал достойного человека.»`,
+      choices: [
+        { text: '— [ Пожелать крепкого здоровья ] Берегите себя, дядя Игорь.', action: () => applyTalkEffect('neighbor', '❤️ Проявленная забота окупилась! Репутация +4%, Отношения повышены.') }
+      ]
+    }
+  })[nodeId],
+
+  grandma: (nodeId) => ({
+    start: {
+      text: `* Мадам Эвелин аккуратно подрезает нитки на готовом платье. (Отношения: ${G.npcRelations.grandma}%)\n` +
+            (!isNpcAvailableToday('grandma') ? `* «Сегодня мастерская закрыта на учёт. Приходите завтра.»` :
+            G.timeOfDay === 2 ? `* «Я уже закрываю швейную мастерскую. Приходите завтра!»` :
+            G.completedTasksToday.grandma ? `* «На сегодня достаточно, мой помощник. Завтра снова жду!»` :
+            `* «Здравствуйте. Заказов накопилось много, мне бы не помешал аккуратный помощник.»`),
+      choices: !isNpcAvailableToday('grandma') ? [{ text: '— Хорошо, зайду завтра.', nextNode: null }] :
+               G.timeOfDay === 2 ? [{ text: '— Извините, зайду завтра.', nextNode: null }] :
+               G.completedTasksToday.grandma ? [{ text: '— До завтра, мадам Эвелин.', nextNode: null }] : [
+        ...(G.activeJobOffer && G.activeJobOffer.npcId === 'grandma' ? [{ text: `— [ ☎ Выполнить задание по звонку ]`, nextNode: 'phone_job' }] : []),
+        { text: '— [ Взять обычное поручение ]', nextNode: 'job_node' },
+        { text: '— [ Вложить в закупку тканей ]', nextNode: 'invest_node' },
+        { text: '— [ Поговорить по душам ]', condition: () => !G.dailyTalks.grandma, nextNode: 'talk_node' },
+        { text: '— Я зайду позже.', nextNode: null }
+      ]
+    },
+    phone_job: phoneJobNode('grandma'),
+    job_node: {
+      text: G.energy <= 0 ? `* «Вы слишком утомлены. Отдохните сначала.»` : `* Задание в швейной: "${G.currentNpcJobs.grandma.text}"`,
+      choices: G.energy <= 0 ? [{ text: '— Хорошо.', nextNode: null }] : [
+        { text: '— [ Начать выполнение (-1 энергия) ]', keepOpen: true, action: () => startMinigame(G.currentNpcJobs.grandma.type, G.currentNpcJobs.grandma.money, G.currentNpcJobs.grandma.karma, 'grandma') },
+        { text: '— Назад.', nextNode: 'start' }
+      ]
+    },
+    invest_node: {
+      text: `* Мадам Эвелин раскладывает каталог:\n«Из Парижа везут редкие шёлковые ткани. Если удастся перехватить партию (50% шанс), через 3 дня выручим в два раза больше. Нужно 120 монет авансом.»`,
+      choices: [
+        { text: '— [ Вложить 120 монет в шёлк (50% шанс, +300 через 3 дня) ]',
+          condition: () => G.money >= 120,
+          action: () => {
+            G.money -= 120;
+            G.pendingInvestments.push({ label: 'Шёлк Эвелин', returnDay: G.day + 3, amount: 300, chance: 0.50 });
+            G.completedTasksToday.grandma = true;
+            performAction(); updateUI();
+            alert('🧵 Вложено 120 монет в партию шёлка. Результат — через 3 дня.');
+          }, nextNode: null },
+        { text: '— Пожалуй, не стоит. Назад.', nextNode: 'start' }
+      ]
+    },
+    talk_node: {
+      text: `* Мадам Эвелин грустно улыбается:\n«О, когда-то моя семья держала большую мануфактуру до текстильного кризиса. Шитьё — это всё, что у меня осталось от прошлой красивой жизни. В каждый стежок я вкладываю частичку души, чтобы согреть этот холодный Город.»`,
+      choices: [
+        { text: '— [ Выразить восхищение мастерством ] Ваши платья — настоящее искусство.', action: () => applyTalkEffect('grandma', '❤️ Тёплый разговор со швеёй порадовал её. Репутация +4%, Отношения повышены.') }
+      ]
+    }
+  })[nodeId],
+
+  shop: (nodeId) => ({
+    start: {
+      text: !isNpcAvailableToday('shop') ? `* Марка сейчас нет в мастерской. Зайдите в другой день.` :
+            G.energy <= 0 ? '* «Слушай, у тебя ноль сил. Сходи домой, выспись.»' : 
+            `* Обувщик Марк протирает очки. Твоя торговля аккумуляторами забирает 1 энергию и продвигает время суток.`,
+      choices: !isNpcAvailableToday('shop') ? [{ text: '— Ухожу.', nextNode: null }] :
+               G.energy <= 0 ? [{ text: '— Ухожу.', nextNode: null }] : [
+        { text: '— [ Выкупить ящик аккумуляторов (-60 монет, -1 энергия) ]', condition: () => !G.hasItemsToSell && G.money >= 60, action: () => { G.money -= 60; G.hasItemsToSell = true; performAction(); }, nextNode: 'start' },
+        { text: '— [ Сдать партию аккумуляторов на завод (+120 монет, -1 энергия) ]', condition: () => G.hasItemsToSell, action: () => { G.money += 120; G.hasItemsToSell = false; performAction(); }, nextNode: 'start' },
+        { text: '— Пойду пройдусь.', nextNode: null }
+      ]
+    }
+  })[nodeId],
+
+  bandit: (nodeId) => ({
+    start: {
+      text: `* Серый тип (Отношения: ${G.npcRelations.bandit}%)\n` +
+            (!isNpcAvailableToday('bandit') ? `* «Сегодня я в тени. Не светись рядом. Завтра.»` :
+            G.timeOfDay !== 2 ? `* «Я не веду дела при свете дня. Возвращайся только НОЧЬЮ!»` :
+            G.completedTasksToday.bandit ? `* «На сегодня хватит. Слишком много движения привлекает ненужное внимание. Завтра.»` :
+            `* «О, ночной гость. Есть прибыльные дела под твою ответственность. Рискнешь?»`),
+      choices: !isNpcAvailableToday('bandit') ? [{ text: '— Понял.', nextNode: null }] :
+               G.timeOfDay !== 2 ? [{ text: '— Приду ночью.', nextNode: null }] :
+               G.completedTasksToday.bandit ? [{ text: '— До следующей ночи.', nextNode: null }] : [
+        ...(G.activeJobOffer && G.activeJobOffer.npcId === 'bandit' ? [{ text: `— [ ☎ Выполнить задание по звонку ]`, nextNode: 'phone_job' }] : []),
+        { text: '— [ Взять обычное дело ]', nextNode: 'job_node' },
+        { text: '— [ Тёмная инвестиция ]', nextNode: 'invest_node' },
+        { text: '— [ Поговорить по душам ]', condition: () => !G.dailyTalks.bandit, nextNode: 'talk_node' },
+        { text: '— Я не хочу рисковать.', nextNode: null }
+      ]
+    },
+    phone_job: phoneJobNode('bandit'),
+    job_node: {
+      text: G.energy <= 0 ? `* «Иди выспись, доходяга.»` : `* Грязное дело: "${G.currentNpcJobs.bandit.text}"`,
+      choices: G.energy <= 0 ? [{ text: '— Понял.', nextNode: null }] : [
+        { text: '— [ Взяться за дело (-1 энергия) ]', keepOpen: true, action: () => startMinigame(G.currentNpcJobs.bandit.type, G.currentNpcJobs.bandit.money, G.currentNpcJobs.bandit.karma, 'bandit') },
+        { text: '— Назад.', nextNode: 'start' }
+      ]
+    },
+    invest_node: {
+      text: `* Серый тип ухмыляется:\n«Есть один контрабандный груз. Нужен вклад 150 монет. Шанс — как монетка: 45%. Но если выгорит — получишь 450 монет через 2 дня. Репутация — твоя проблема.»`,
+      choices: [
+        { text: '— [ Вложить 150 монет в контрабанду (45% шанс, +450 через 2 дня, Репутация -10) ]',
+          condition: () => G.money >= 150,
+          action: () => {
+            G.money -= 150;
+            G.karma = Math.max(0, G.karma - 10);
+            G.pendingInvestments.push({ label: 'Контрабанда (Серый тип)', returnDay: G.day + 2, amount: 450, chance: 0.45 });
+            G.completedTasksToday.bandit = true;
+            performAction(); updateUI();
+            alert('🌑 Вложено 150 монет в тёмное дело. Репутация -10. Результат — через 2 дня.');
+          }, nextNode: null },
+        { text: '— Слишком грязно. Назад.', nextNode: 'start' }
+      ]
+    },
+    talk_node: {
+      text: `* Серый тип хмыкает, оглядываясь по сторонам:\n«Страх — это роскошь, парень. В этом Городе либо ты забираешь кусок хлеба, либо жрут тебя. Я тоже когда-то верил в честный труд, пока фабрика не выкинула меня на улицу без гроша. Так что теперь я играю по их жестким правилам.»`,
+      choices: [
+        { text: '— [ Молча кивнуть ] Понимаю тебя.', action: () => applyTalkEffect('bandit', '❤️ Даже Серый тип оценил, что его выслушали. Репутация +4%, Отношения повышены.') }
+      ]
+    }
+  })[nodeId],
+
+  garden: (nodeId) => ({
+    text: G.energy <= 0 ? '* Нет сил копать грядки.' : !G.hasPlanted ? '* Заброшенный огород. Засеять грядку редким редисом за 40 эк.?' : `* Редис растет. Прошло дней: ${G.day - G.plantDay}/3.`,
+    choices: G.energy <= 0 ? [{ text: '— Вернусь позже.', nextNode: null }] : [
+      { text: '— [ Посадить семена в почву (-40 монет, -1 энергия) ]', condition: () => !G.hasPlanted && G.money >= 40, action: () => { G.money -= 40; G.plantDay = G.day; G.hasPlanted = true; performAction(); } },
+      { text: '— [ Собрать готовый урожай редиса (+190 монет, -1 энергия) ]', condition: () => G.hasPlanted && (G.day - G.plantDay >= 3), action: () => { G.money += 190; G.hasPlanted = false; performAction(); } },
+      { text: '— Пока оставить как есть.', nextNode: null }
+    ]
+  })
+};
+
+function updateNPCAnimations() {
+  const loc = locations[G.currentLocation];
+  if (!loc.npcs) return;
+  loc.npcs.forEach(npc => {
+    if (!npc.sprite || npc.type === 'garden') return;
+    npc.tick++; if (npc.tick >= npc.speed) { npc.tick = 0; npc.currentFrame = (npc.currentFrame + 1) % npc.maxFrames; }
+  });
+}
+
+function draw() {
+  const loc = locations[G.currentLocation]; const camX = loc.cameraX || 0;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (G.currentLocation === 'home') {
+    if (homeBgImg && homeBgImg.complete && homeBgImg.naturalWidth > 0) ctx.drawImage(homeBgImg, 0, 0, canvas.width, canvas.height);
+    else { ctx.fillStyle = '#1c1c1c'; ctx.fillRect(0, 0, canvas.width, canvas.height); }
+  }
+  if (G.currentLocation === 'city') {
+    let currentBg;
+    if (G.timeOfDay === 0) currentBg = bgMorning;     
+    else if (G.timeOfDay === 1) currentBg = bgDay;    
+    else currentBg = bgNight;                         
+
+    if (currentBg.complete && currentBg.naturalWidth > 0) {
+      ctx.drawImage(currentBg, 0, 0, canvas.width, canvas.height);
+    } else {
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }  
+    let floorY = canvas.height - loc.floorOffset;
+    ctx.fillStyle = '#111111'; ctx.fillRect(0, floorY, canvas.width, canvas.height - floorY);
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, floorY, canvas.width, 4);
+  }
+
+  loc.objects.forEach(obj => {
+    ctx.fillStyle = obj.color || '#ffffff';
+    if (obj.type === 'door') {
+      ctx.fillStyle = '#000000'; ctx.fillRect(obj.x - camX, obj.y, obj.width, obj.height);
+      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2; ctx.strokeRect(obj.x - camX, obj.y, obj.width, obj.height);
+      ctx.fillStyle = '#ffffff'; ctx.font = '10px "Press Start 2P"'; ctx.fillText(obj.label, obj.x - camX - 15, obj.y - 12);
+    }
+    if (obj.type === 'phone') {
+      if (telephoneImg.complete && telephoneImg.naturalWidth > 0) {
+        ctx.drawImage(telephoneImg, obj.x - camX, obj.y, obj.width, obj.height);
+      } else {
+        ctx.fillRect(obj.x - camX, obj.y, obj.width, obj.height);
+        ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2; ctx.strokeRect(obj.x - camX, obj.y, obj.width, obj.height);
+      }
+      ctx.fillStyle = '#ffffff'; ctx.font = '10px "Press Start 2P"'; ctx.fillText(obj.label, obj.x - camX - 3, obj.y - 10);
+      if (G.phoneRinging) { ctx.fillStyle = '#ff0000'; ctx.font = 'bold 10px "Press Start 2P"'; ctx.fillText('[☎ ЗВОНИТ!]', obj.x - camX - 18, obj.y - 26); }
+    }
+    if (obj.type === 'bed') {
+      ctx.fillRect(obj.x - camX, obj.y, obj.width, obj.height);
+      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2; ctx.strokeRect(obj.x - camX, obj.y, obj.width, obj.height);
+      ctx.fillStyle = '#ffffff'; ctx.font = '10px "Press Start 2P"'; ctx.fillText(obj.label, obj.x - camX + 5, obj.y - 10);
+    }
+  });
+
+  loc.npcs.forEach(npc => {
+    ctx.fillStyle = npc.color || '#ffffff';
+    if (npc.type === 'garden') {
+      ctx.fillStyle = '#222222'; ctx.fillRect(npc.x - camX, npc.y, npc.width, npc.height);
+      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2; ctx.strokeRect(npc.x - camX, npc.y, npc.width, npc.height);
+      if (G.hasPlanted) { ctx.fillStyle = (G.day - G.plantDay >= 3) ? '#00ff00' : '#555555'; ctx.fillRect(npc.x - camX + 45, npc.y - 15, 30, 15); }
+    } else {
+      if (npc.sprite && npc.sprite.complete && npc.sprite.naturalWidth > 0) {
+        const sourceX = npc.currentFrame * npc.frameWidth;
+        const drawWidth = npc.frameWidth * npc.scale; const drawHeight = npc.frameHeight * npc.scale;
+        ctx.drawImage(npc.sprite, sourceX, 0, npc.frameWidth, npc.frameHeight, npc.x - camX - drawWidth / 3, npc.y - drawHeight + npc.height, drawWidth, drawHeight);
+      } else { ctx.fillRect(npc.x - camX, npc.y, npc.width, npc.height); }
+    }
+
+    if (npc.name) {
+      ctx.font = '8px "Press Start 2P"';
+      const textWidth = ctx.measureText(npc.name).width;
+      const paddingX = 8;
+      const paddingY = 8;
+      const bubbleX = npc.x - camX + (npc.width / 2) - (textWidth / 2) - paddingX;
+      const bubbleY = npc.y - 35;
+      const bubbleW = textWidth + (paddingX * 2);
+      const bubbleH = 12 + paddingY;
+
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+      ctx.fillRect(bubbleX, bubbleY, bubbleW, bubbleH);
+      
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(bubbleX, bubbleY, bubbleW, bubbleH);
+
+      ctx.fillStyle = '#ffff33'; 
+      ctx.fillText(npc.name, bubbleX + paddingX, bubbleY + 15);
+    }
+  });
+
+  if (G.currentLocation === 'city') {
+    if (G.timeOfDay === 1) { 
+      ctx.fillStyle = "rgba(180, 75, 10, 0.08)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    } else if (G.timeOfDay === 2) { 
+      ctx.fillStyle = "rgba(10, 25, 60, 0.22)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+  }
+
+  const activeImg = playerAnimations[currentAnimState]; const maxFrames = animConfig.states[currentAnimState].maxFrames;
+  animConfig.tick++; if (animConfig.tick >= animConfig.speed) { animConfig.tick = 0; animConfig.currentFrame = (animConfig.currentFrame + 1) % maxFrames; }
+
+  ctx.save();
+  if (activeImg && activeImg.complete && activeImg.naturalWidth > 0) {
+    const sourceX = animConfig.currentFrame * animConfig.frameWidth;
+    const drawX = player.x - camX; const drawY = player.y;
+    const drawW = animConfig.frameWidth * animConfig.scale; const drawH = animConfig.frameHeight * animConfig.scale;
+    if (player.facing === 'left') { ctx.translate(drawX + drawW / 2, drawY + drawH / 2); ctx.scale(-1, 1); ctx.drawImage(activeImg, sourceX, 0, animConfig.frameWidth, animConfig.frameHeight, -drawW / 2, -drawH / 2, drawW, drawH); }
+    else { ctx.drawImage(activeImg, sourceX, 0, animConfig.frameWidth, animConfig.frameHeight, drawX, drawY, drawW, drawH); }
+  } else {
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(player.x - camX, player.y, player.width, player.height);
+    ctx.strokeStyle = '#000000'; ctx.lineWidth = 3; ctx.strokeRect(player.x - camX, player.y, player.width, player.height);
+  }
+  ctx.restore();
+}
+
+function gameLoop() {
+  updatePlayer();
+  updateNPCAnimations();
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+
+startTextScreen('intro', introTexts);
+</script>
+
+<div id="mobile-controls">
+  <div id="joystick-base"><div id="joystick-stick"></div></div>
+  <button id="mobile-action">E</button>
+</div>
+
+<script>
+const MOBILE={left:false,right:false};
+function setupMobileControls(){
+ const base=document.getElementById('joystick-base');
+ const stick=document.getElementById('joystick-stick');
+ const action=document.getElementById('mobile-action');
+ if(!base||!stick||!action)return;
+
+ function resetJoy(){
+   MOBILE.left=false; MOBILE.right=false;
+   stick.style.transform='translate(0,0)';
+ }
+ function move(clientX){
+   const r=base.getBoundingClientRect();
+   const center=r.left+r.width/2;
+   const dx=clientX-center;
+   const lim=40;
+   const clamped=Math.max(-lim,Math.min(lim,dx));
+   stick.style.transform=`translate(${clamped}px,0)`;
+   MOBILE.left=clamped<-12;
+   MOBILE.right=clamped>12;
+ }
+base.addEventListener('touchend', resetJoy);
+base.addEventListener('touchcancel', resetJoy);
+document.addEventListener('touchend', resetJoy);
+
+ action.addEventListener('touchstart',()=>handleInteractionKey('KeyE'));
+ action.addEventListener('click',()=>handleInteractionKey('KeyE'));
+
+ const oldUpdate=window.updatePlayer;
+ if(oldUpdate){
+   window.updatePlayer=function(){
+     if(MOBILE.left){
+    keys['KeyA'] = true;
+}
+
+if(MOBILE.right){
+    keys['KeyD'] = true;
+}
+     return oldUpdate();
+   }
+ }
+}
+window.addEventListener('load',setupMobileControls);
+
+const oldResize=window.resizeCanvas;
+if(oldResize){
+ window.resizeCanvas=function(){
+   oldResize();
+   const scale=Math.max(0.75,Math.min(window.innerWidth/1280,1.15));
+   if(window.player){
+     player.width=(animConfig.frameWidth*animConfig.scale*0.4)*scale;
+     player.height=(animConfig.frameHeight*animConfig.scale)*scale;
+   }
+ }
+}
+</script></body>
+</html>
